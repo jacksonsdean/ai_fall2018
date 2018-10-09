@@ -1,19 +1,22 @@
 # Final project for Introduction to Artificial Intelligence
 COMP 484 with Susan Fox, Fall 2018
 ------------------------------------------------------------
-
+<ul>
 Set up git:
 
-	in directory, run $<code>git branch --set-upstream-to=origin/master</code>
-	to push, add the files then <code>git commit -m "some useful comment about the commit"</code> then <code>git pull --rebase && git push</code>
-
-
+<li>in directory, run $<code>git branch --set-upstream-to=origin/master </code> </li>
+	
+<li>to push, add the files then <code>git commit -m "some useful comment about the commit"</code> then <code>git pull --rebase && git push</code></li>
+</ul>
+<ul>
 In order to work with this code, use bash and source bin/activate
-
+<li>
 $<code>source bin/activate</code>
+</li>
 
-You should see "(final_project)" before your bash prompt
-To leave the virtual environment, type <code>deactivate</code>
+<li>You should see "(final_project)" before your bash prompt</li>
+<li>To leave the virtual environment, type <code>deactivate</code></li>
 
 Now update pip and tensorflow:
-  $<code>pip3 install --upgrade pip && pip3 install --upgrade tensorflow</code>
+  <li>$<code>pip3 install --upgrade pip && pip3 install --upgrade tensorflow</code></li>
+</ul>
