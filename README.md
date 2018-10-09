@@ -2,6 +2,11 @@
 COMP 484 with Susan Fox, Fall 2018
 ------------------------------------------------------------
 
+Set up git:
+
+in directory, run $<code>git branch --</code>
+
+
 In order to work with this code, use bash and source bin/activate
 
 $<code>source bin/activate</code>
