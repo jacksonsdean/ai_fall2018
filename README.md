@@ -4,7 +4,8 @@ COMP 484 with Susan Fox, Fall 2018
 
 Set up git:
 
-in directory, run $<code>git branch --</code>
+	in directory, run $<code>git branch --set-upstream-to=origin/master</code>
+	to push, add the files then <code>git commit -m "some useful comment about the commit"</code> then <code>git pull --rebase && git push</code>
 
 
 In order to work with this code, use bash and source bin/activate
