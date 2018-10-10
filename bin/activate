@@ -39,6 +39,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
+# VIRTUAL_ENV="/mnt/c/Users/Jacks/Documents/AI/final_project"
 VIRTUAL_ENV="."
 export VIRTUAL_ENV
 
