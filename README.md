@@ -13,11 +13,11 @@ In order to work with this code, use bash and source bin/activate:
 <ul>
 <li>$<code>source bin/activate</code></li>
 <li>You should see "(final_project)" before your bash prompt</li>
-<li>To leave the virtual environment, type <code>deactivate</code></li>
+<li>To leave the virtual environment when you're done working with the code, type <code>deactivate</code></li>
 </ul>
 
 
 Now update pip and install dependencies:
 <ul>
-  <li>$<code>pip install --upgrade pip && pip install -r requirements.txt</code></li>
+  <li>(with virtual environment sourced)$<code>pip install --upgrade pip && pip install -r requirements.txt</code></li>
 </ul>
