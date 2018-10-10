@@ -17,7 +17,7 @@ In order to work with this code, use bash and source bin/activate:
 </ul>
 
 
-Now update pip and tensorflow:
+Now update pip and install dependencies:
 <ul>
-  <li>$<code>pip3 install --upgrade pip && pip3 install --upgrade tensorflow</code></li>
+  <li>$<code>pip install --upgrade pip && pip install -r requirements.txt</code></li>
 </ul>
