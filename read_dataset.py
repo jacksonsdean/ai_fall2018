@@ -1,8 +1,10 @@
 import os
 import sys
+import math
 import numpy as np
 import pandas as pd
 import librosa as lb
+import matplotlib.pyplot as plt
 
 from scipy import misc
 
@@ -40,7 +42,7 @@ N_MELS     = 96
 N_OVERLAP  = 256
 DURA       = 29.12
 
-def log_scale_melspectrogram(path, plot=False):
+def log_scale_melspectrogram(path, plot=True):
     signal, sr = lb.load(path, sr=Fs)
     n_sample = signal.shape[0]
     n_sample_fit = int(DURA*Fs)
@@ -48,15 +50,25 @@ def log_scale_melspectrogram(path, plot=False):
     if n_sample < n_sample_fit:
         signal = np.hstack((signal, np.zeros((int(DURA*Fs) - n_sample,))))
     elif n_sample > n_sample_fit:
-        signal = signal[(n_sample-n_sample_fit)/2:(n_sample+n_sample_fit)/2]
+        bottom = int(math.floor(n_sample-n_sample_fit)/2)
+        top = int(math.floor(n_sample+n_sample_fit)/2)
 
-    melspect = lb.logamplitude(lb.feature.melspectrogram(y=signal, sr=Fs, hop_length=N_OVERLAP, n_fft=N_FFT, n_mels=N_MELS)**2, ref_power=1.0)
+        signal = signal[bottom:top]
+
+    melspect = lb.amplitude_to_db(lb.feature.melspectrogram(y=signal, sr=Fs, hop_length=N_OVERLAP, n_fft=N_FFT, n_mels=N_MELS)**2, ref=1.0)
 
     if plot:
         melspect = melspect[np.newaxis, :]
-        misc.imshow(melspect.reshape((melspect.shape[1],melspect.shape[2])))
+        # misc.imshow(melspect.reshape((melspect.shape[1],melspect.shape[2])))
+        plt.imshow(melspect.reshape((melspect.shape[1], melspect.shape[2])))
+        plt.show()
         print(melspect.shape)
-
+        try:
+            inp = input("return to continue. \"q\" to quit: ")
+            if inp == "q":
+                quit
+        except KeyboardInterrupt:
+            quit
     return melspect
 
 
