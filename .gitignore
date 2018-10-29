@@ -1,4 +1,5 @@
-data/*
+.idea/
+\data/*
 lib/python3.4/site-packages/*
 #lib/python3.4/site-packages/tensor*
 #lib/python3.4/site-packages/wheel
