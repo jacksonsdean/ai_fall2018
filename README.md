@@ -23,6 +23,7 @@ Now update pip and install dependencies:
 </ul>
 
 The dataset is located at: http://marsyasweb.appspot.com/download/data_sets/
+The data processing python file expects the files to be in a folder called "data" with ten subfolders, one for each genre (IE the first jazz song's path is "./data/jazz/jazz.00000.au").
 
 
 <b>Note:</b>
