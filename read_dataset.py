@@ -182,7 +182,7 @@ if __name__ == '__main__':
 
     y_ = cnn(X, weights, phase_train)
 
-    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=y_, labels=y))
+    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_, logits=y))
     train_op = tf.train.RMSPropOptimizer(learning_rate, 0.9).minimize(cost)
     predict_op = y_
 
