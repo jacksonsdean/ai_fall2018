@@ -45,8 +45,7 @@ N_MELS     = 96
 N_OVERLAP  = 256
 DURA       = 29.12
 
-def log_scale_melspectrogram(path, plot=True):
-    print(path)
+def log_scale_melspectrogram(path, plot=False):
     signal, sr = lb.load(path, sr=Fs)
     n_sample = signal.shape[0]
     n_sample_fit = int(DURA*Fs)
@@ -119,6 +118,7 @@ def cnn(melspectrogram, weights, phase_train):
     x = tf.reshape(melspectrogram,[-1,1,96,1366])
     x = batch_norm(melspectrogram, 1366, phase_train)
     x = tf.reshape(melspectrogram,[-1,96,1366,1])
+
     conv2_1 = tf.add(tf.nn.conv2d(x, weights['wconv1'], strides=[1, 1, 1, 1], padding='SAME'), weights['bconv1'])
     conv2_1 = tf.nn.relu(batch_norm(conv2_1, 32, phase_train))
     mpool_1 = tf.nn.max_pool(conv2_1, ksize=[1, 2, 4, 1], strides=[1, 2, 4, 1], padding='VALID')
@@ -182,7 +182,7 @@ if __name__ == '__main__':
 
     y_ = cnn(X, weights, phase_train)
 
-    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y_, y))
+    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=y_, labels=y))
     train_op = tf.train.RMSPropOptimizer(learning_rate, 0.9).minimize(cost)
     predict_op = y_
 
