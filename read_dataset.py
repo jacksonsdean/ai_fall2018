@@ -13,7 +13,7 @@ from scipy import misc
 
 
 # FROM https://github.com/meetshah1995/crnn-music-genre-classification/blob/master/src/read_data.py
-labels_file = 'data/labels.csv'
+labels_file = 'labels.csv'
 tags = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
 labels = pd.read_csv(labels_file, header=0)
 
