@@ -45,7 +45,8 @@ N_MELS     = 96
 N_OVERLAP  = 256
 DURA       = 29.12
 
-def log_scale_melspectrogram(path, plot=False):
+def log_scale_melspectrogram(path, plot=True):
+    print(path)
     signal, sr = lb.load(path, sr=Fs)
     n_sample = signal.shape[0]
     n_sample_fit = int(DURA*Fs)

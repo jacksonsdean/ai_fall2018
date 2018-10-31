@@ -21,3 +21,8 @@ Now update pip and install dependencies:
 <ul>
   <li>(with virtual environment sourced)$<code>pip install --upgrade pip && pip install -r requirements.txt</code></li>
 </ul>
+
+<b>Note:</b>
+
+To run on windows with python 3.7.x, run as administrator, use "py -m pip install XXXXX" to install packages and "py XXX.py" to run files
+
