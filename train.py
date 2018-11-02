@@ -1,20 +1,18 @@
 import numpy as np
 import tensorflow as tf
 
-num_epoch       = 10
-num_samples     = 1000                              # 1000 for entire dataset
-train_test_split      = 0.8
-train_size    = int(num_samples * train_test_split)
-test_size     = num_samples - train_size
+N_EPOCH = 10
+N_SAMPLES = 1000
+TRAIN_SPLIT = 0.8
+
+train_size = int(N_SAMPLES * TRAIN_SPLIT)
+test_size = N_SAMPLES - train_size
 
 
 if __name__ == '__main__':
     # Our net:
     labels = np.load("labels.npy")
-    data = np.load("data.npy")#, dtype=np.ndarray)
-
-    y_train = data[:train_size]
-    x_train = labels[:train_size]
+    data = np.load("data.npy")
 
     model = tf.keras.models.Sequential([
         tf.keras.layers.Flatten(),
@@ -26,12 +24,11 @@ if __name__ == '__main__':
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
 
-    x_train = x_train[0:train_size]
-    x_test = x_train[train_size:]
+    x_train = data[0:train_size]
+    x_test = data[train_size:]
 
-    y_train = y_train[0:train_size]
-    y_test = y_train[train_size:]
+    y_train = labels[0:train_size]
+    y_test = labels[train_size:]
 
-
-    model.fit(y_train, x_train, epochs=num_epoch)
-    model.evaluate(y_test, y_test)
+    model.fit(x_train, y_train, epochs=N_EPOCH)
+    model.evaluate(x_test, y_test)

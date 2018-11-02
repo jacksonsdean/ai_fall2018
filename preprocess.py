@@ -4,18 +4,10 @@ import pandas as pd
 import librosa as lb
 import matplotlib.pyplot as plt
 
-# FROM https://github.com/meetshah1995/crnn-music-genre-classification/blob/master/src/read_data.py
-
-#THEIRS:
+# CODE FROM https://github.com/meetshah1995/crnn-music-genre-classification/blob/master/src/read_data.py:
 def get_melspectrograms(labels_dense, num_classes=10):
     spectrograms = np.asarray([log_scale_melspectrogram(i) for i in labels_dense['path']])
     spectrograms = spectrograms.reshape(spectrograms.shape[0], spectrograms.shape[1], spectrograms.shape[2], 1)
-    return spectrograms
-
-
-def get_melspectrograms_indexed(index, labels_dense, num_classes=10):
-    spectrograms = np.asarray([log_scale_melspectrogram(i) for i in labels_dense['path'][index]])
-    # spectrograms = spectrograms.reshape(spectrograms.shape[0], spectrograms.shape[1], spectrograms.shape[2], 1)
     return spectrograms
 
 Fs         = 12000
@@ -47,10 +39,13 @@ def log_scale_melspectrogram(path, plot=False):
     return melspect
 
 
-
-#########OURS:       -----------------------------------------
+#########################################
+# OUR CODE BELOW HERE:
+#########################################
 
 def preprocess(labels):
+    """Given the labels array, produce two arrays, the first is the labels and the second is the
+    corresponding data. The index of the labels array matches the index of the data array."""
     train_labels = []
     train_data = []
     print("Starting Data Process: ")
