@@ -38,10 +38,32 @@ def log_scale_melspectrogram(path, plot=False):
         print(melspect.shape)
     return melspect
 
+labels_file  = 'labels.csv'
+tags = ['blues','classical','country','disco','hiphop','jazz','metal','pop','reggae','rock']
+labels = pd.read_csv(labels_file,header=0)
+
+def get_labels(labels_dense=labels['label'], num_classes=10):
+    num_labels = labels_dense.shape[0]
+    index_offset = np.arange(num_labels) * num_classes
+    labels_one_hot = np.zeros((num_labels, num_classes))
+    labels_one_hot.flat[index_offset + labels_dense.ravel()] = 1
+    return labels_one_hot
+
+
+def get_melspectrograms_indexed(index, labels_dense=labels, num_classes=10):
+    spectrograms = np.asarray([log_scale_melspectrogram(i) for i in labels_dense['path'][index]])
+    spectrograms = spectrograms.reshape(spectrograms.shape[0], spectrograms.shape[1], spectrograms.shape[2], 1)
+    return spectrograms
 
 #########################################
 # OUR CODE BELOW HERE:
 #########################################
+
+def mel(path):
+    y, sr = lb.load(path, mono=True)
+    specto = lb.feature.melspectrogram(y=y, sr=sr, n_mels=128, n_fft=2048, hop_length=1024)
+    specto = lb.power_to_db(specto, ref=np.max)
+
 
 def preprocess(labels):
     """Given the labels array, produce two arrays, the first is the labels and the second is the
@@ -51,12 +73,14 @@ def preprocess(labels):
     print("Starting Data Process: ")
     print("\t" + str(len(labels)), "labels found...",end="\n\t")
     for i in range(len(labels)):
+    # for i in range(10):
         path = labels['path'][i]
         label = int(labels['label'][i])
         train_labels.append(label)
         data = log_scale_melspectrogram(path)
+        # data = mel(path)
         train_data.append(data)
-        percent_done = round((i/len(labels))*100,2)
+        percent_done = round((i/len(labels))*100, 2)
         print(str(percent_done) + "% done" + "."*(i%4), end="\r\t")
     print()
     return np.array(train_labels), np.array(train_data)
@@ -67,7 +91,8 @@ if __name__ == '__main__':
     labels = pd.read_csv(labels_file, header=0)
     out = preprocess(labels)
 
-    np.save("labels.npy", out[0])
+    # np.save("labels.npy", out[0])
+    np.save("labels.npy", get_labels())
     print("labels array saved to labels.npy")
     np.save("data.npy", out[1])
     print("data array saved to data.npy")
