@@ -67,8 +67,6 @@ if __name__ == '__main__':
                   loss='categorical_crossentropy', # WHY DID WE DO THIS??
                   metrics=['accuracy'])
 
-    # shaped_data = shaped_data.reshape(1000, 96, 1366)
-    # shaped_labels = shaped_labels.reshape(1000, 10)
 
     x_train = data[0:train_size]
     x_test = data[train_size:]
