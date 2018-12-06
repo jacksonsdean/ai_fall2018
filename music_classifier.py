@@ -41,10 +41,10 @@ class Application(tk.Frame):
     def create_widgets(self):
         self.winfo_toplevel().title("COMP 484 Music Classifier")
         self.model_type = tk.IntVar()
-        self.model_type.set(2)
 
         tk.Radiobutton(self, text="CNN", variable=self.model_type, value=1, command=lambda: self.changeType(1)).grid(row=1, column=0,padx=5,pady=(15,5))
         tk.Radiobutton(self, text="LSTM", variable=self.model_type, value=2, command=lambda: self.changeType(2)).grid(row=2,column=0,padx=5,pady=5)
+        self.model_type.set(1)
 
 
 
@@ -80,6 +80,8 @@ class Application(tk.Frame):
 
     def changeType(self, type):
         self.model_type = type
+        self.model_type.set(type)
+
         self.model_built = False
 
     def buildLSTMModel(self):
@@ -284,7 +286,7 @@ class Application(tk.Frame):
         pred_class = prediction.argmax()
         self.printLine("Built spectrogram...")
         string = "Computer thinks the genre of this song is:\n" + classes[pred_class]
-        string += "\n\nwith:\n" + str(prediction[0][pred_class]) + "% certainty"
+        string += "\n\nwith:\n" + str(prediction[0][pred_class]*100) + "% certainty"
         messagebox.showinfo("Prediction", string)
 
         self.printLine("Done")
