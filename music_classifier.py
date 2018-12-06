@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 from tkinter import messagebox
+from IPython.display import clear_output
 
 
 N_SAMPLES = 1000
@@ -33,14 +34,15 @@ class Application(tk.Frame):
 
         self.batch_size = 0
         self.n_epoch = 0
-
+        self.plot = tk.IntVar()
+        self.plot.set(0)
         self.create_widgets()
 
     def create_widgets(self):
-        self.winfo_toplevel().title("COMP 484 Music Classifier")
+        self.winfo_toplevel().title("Music Classifier COMP 484")
         self.typeFrame = tk.LabelFrame(self, text="Model Type", padx=5, pady=5)
-        self.typeFrame.grid(row=1, column=0,rowspan=2)
-        self.typeFrame.config(bd=1)
+        self.typeFrame.grid(row=1, column=0,rowspan=2, pady=(10,0), padx=(10,0))
+        self.typeFrame.config(bd=1, height=40)
         rb1 = tk.Radiobutton(self.typeFrame, text="CNN", variable=self.model_type, value=1, command=lambda: self.changeType(1))
         # rb1.config(bg="#272323", fg="#ffffff")
         rb1.pack(anchor="n")
@@ -54,28 +56,38 @@ class Application(tk.Frame):
 
         self.btnFrame = tk.LabelFrame(self, text="", padx=5, pady=5)
 
-        self.btnFrame.grid(row=1, column=2, rowspan=2)
-        self.btnFrame.config(bd=1)
+        self.btnFrame.grid(row=1, column=2, rowspan=2, pady=(10,0), padx=10)
+        self.btnFrame.config(bd=1, height=40)
 
         self.train_btn = tk.Button(self.btnFrame)
         self.train_btn["text"] = " Train "
         self.train_btn["command"] = self.train
-        self.train_btn.config(width = 10)
-        self.train_btn.grid(row=1, column=2,pady=0, padx=5)
+        self.train_btn.config(width = 8)
+        self.train_btn.grid(row=1,column= 0, pady=0, padx=(5,0),sticky="w")
+
+
+        c = tk.Checkbutton(self.btnFrame, text="Plot", variable=self.plot)
+        c.grid(row=1, column=1)
+
 
         self.predict_btn = tk.Button(self.btnFrame)
         self.predict_btn["text"] = "Predict"
         self.predict_btn["command"] = self.predict
-        self.predict_btn.config(width = 10)
-
-        self.predict_btn.grid(row=2, column=2,pady=0, padx=5)
+        self.predict_btn.config(width = 16)
+        self.predict_btn.grid(row=2, column=0,columnspan=2,  pady=0, padx=5)
 
         self.out = tk.Text(self, state='disabled',height=4, width = 30, background="#272323", fg="#ffffff")
         self.out.tag_config("right", justify=tk.RIGHT)
-        self.out.grid(row = 4, columnspan=3, pady=20, padx=20)
-
-        self.out.delete(1.0, tk.END)
+        self.out.grid(row = 4, columnspan=3, pady=(20,0), padx=20)
+        # self.out.delete(1.0, tk.END)
         self.printLine("Started")
+
+        self.q_btn = tk.Button(self)
+        self.q_btn["text"] = "Quit"
+        self.q_btn["command"] = quit
+        self.q_btn.config(fg = "red", width = 20)
+        self.q_btn.grid(row = 5, column=0, columnspan=3, pady=(5,10))
+
 
     def printLine(self, text):
         self.out.configure(state='normal')
@@ -115,13 +127,13 @@ class Application(tk.Frame):
         self.input_shape = self.input_shape + [1]
 
         self.model = tf.keras.models.Sequential([
-            tf.keras.layers.Conv2D(32, kernel_size=(4, 4),
+            tf.keras.layers.Conv2D(64, kernel_size=(4, 4),
                                    strides=(4, 4),  # X and Y to move the window by
                                    activation=tf.nn.sigmoid,
                                    input_shape=self.input_shape),
             tf.keras.layers.Dense(512, activation=tf.nn.relu),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2)),
-            tf.keras.layers.Conv2D(64, (4, 4), activation=tf.nn.relu),
+            tf.keras.layers.Conv2D(128, (4, 4), activation=tf.nn.relu),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
             tf.keras.layers.Dropout(.2),
             tf.keras.layers.Flatten(),
@@ -135,7 +147,6 @@ class Application(tk.Frame):
         self.model_built = True
 
     def train(self):
-        self.printLine("Model built: " + str(self.model_built))
         self.valid = False
         window = tk.Toplevel(self)
         window.grab_set()
@@ -148,6 +159,8 @@ class Application(tk.Frame):
 
         epoch_entry = tk.Entry(window)
         epoch_entry.grid(row=1, column=1)
+
+        epoch_entry.bind('<Return>', lambda event, obj=self:go(obj))
 
         def go(obj):
             obj.valid = False
@@ -173,19 +186,21 @@ class Application(tk.Frame):
         if not self.valid:
             self.printLine("Cancelling..")
             return
+        else:
+            self.printLine("Starting Train...")
+
 
         x_train, x_test, y_train, y_test = self.getData()
-
         if not self.model_built or self.model == None:
-            if (self.model_type == tk.IntVar(value=1)):
+            if (self.model_type.get() == 1):
                 self.buildCNNModel()
                 x_train = x_train.reshape([-1, 96, 1366, 1])
                 x_test = x_test.reshape([-1, 96, 1366, 1])
 
-            elif (self.model_type == tk.IntVar(value=2)):
+            elif (self.model_type.get() == 2):
                 self.buildLSTMModel()
 
-        history = AccuracyHistory()
+        history = AccuracyHistory(plotting=self.plot)
 
 
         self.printLine("Training...")
@@ -259,17 +274,13 @@ class Application(tk.Frame):
         classes = ["jazz", "blues", "reggae", "pop", "disco", "country", "metal", "hiphop", "rock", "classical"]
         # classes = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
 
-        # self.grab_set()
         if (not self.model_built) or self.model == None:
-            if (self.model_type == tk.IntVar(value=1)):
+            if (self.model_type.get() == 1):
                 self.buildCNNModel()
 
                 self.model.load_weights("./CNNweights")
-            elif (self.model_type == tk.IntVar(value=2)):
+            elif (self.model_type.get() == 2):
                 self.buildLSTMModel()
-                with open("weights") as f:
-                    for i in range(1):
-                        self.printLine(f.readline())
                 self.model.load_weights("./LSTMweights")
 
         self.printLine("Model built, choose file...")
@@ -282,10 +293,10 @@ class Application(tk.Frame):
             return
         self.printLine("Predicting...")
 
-        test = False
+        test = True
         if(test):
-            score = self.model.evaluate(self.getData()[0], self.getData()[2])
-
+            x_train, x_test, y_train, y_test = self.getData()
+            score = self.model.evaluate(x_train, y_train)
             string = 'Loss:\n\t' +  str(score[0]) + "\nAcc:\n\t" + str(score[1])
             messagebox.showinfo("Test", string)
 
@@ -310,22 +321,52 @@ class Application(tk.Frame):
 
 
 class AccuracyHistory(tf.keras.callbacks.Callback):
+    def __init__(self, plotting):
+        self.e_counter = 0
+        self.plotting = plotting.get()
+        super().__init__()
+
     def on_train_begin(self, logs={}):
+        self.i = 0
+        self.x = []
         self.acc = []
         self.loss = []
+        self.val_losses = []
+        self.val_acc = []
+
+        if(self.plotting):
+            plt.ion()
+            plt.show()
+            self.f, (self.ax1, self.ax2) = plt.subplots(1, 2, sharex=True)
+            self.ax1.set_yscale('log')
 
     def on_epoch_end(self, batch, logs={}):
+        self.e_counter += 1
         self.acc.append(logs.get('acc'))
         self.loss.append(logs.get('loss'))
+        self.val_losses.append(logs.get('val_loss'))
+        self.val_acc.append(logs.get('val_acc'))
+        if(self.plotting):
+            self.ax1.plot(range(1, self.e_counter+1), self.loss, label="Loss")
+            # self.ax1.plot(range(1, self.e_counter+1), self.val_losses)
+            self.ax1.set_ylabel('Loss')
+            self.ax1.set_xlabel('Epochs')
+
+            self.ax2.plot(range(1, self.e_counter+1), self.acc, label="Accuracy")
+            # self.ax2.plot(range(1, self.e_counter+1), self.val_acc)
+            self.ax2.set_ylabel('Accuracy')
+            self.ax2.set_xlabel('Epochs')
+
+            plt.draw()
+            plt.pause(0.001)
 
 
 if __name__ == '__main__':
     root = tk.Tk()
     app = Application(master=root)
     app.mainloop()
+    plt.show()
     quit()
-
-
 
 
 
