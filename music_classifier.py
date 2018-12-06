@@ -12,7 +12,7 @@ from IPython.display import clear_output
 
 N_SAMPLES = 1000
 TRAIN_SPLIT = 0.8
-LEARN_RATE = 0.003
+LEARN_RATE = 0.0003 # default: 0.003
 N_CATEGORIES = 10
 
 train_size = int(N_SAMPLES * TRAIN_SPLIT)
@@ -127,17 +127,29 @@ class Application(tk.Frame):
         self.input_shape = self.input_shape + [1]
 
         self.model = tf.keras.models.Sequential([
-            tf.keras.layers.Conv2D(64, kernel_size=(4, 4),
+            tf.keras.layers.Conv2D(32, kernel_size=(4, 4),
                                    strides=(4, 4),  # X and Y to move the window by
-                                   activation=tf.nn.sigmoid,
-                                   input_shape=self.input_shape),
-            tf.keras.layers.Dense(512, activation=tf.nn.relu),
-            tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2)),
-            tf.keras.layers.Conv2D(128, (4, 4), activation=tf.nn.relu),
-            tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
-            tf.keras.layers.Dropout(.2),
+                                   activation=tf.nn.relu,
+                                   input_shape=self.input_shape,
+                                   padding='SAME'),
+            # tf.keras.layers.Dense(512, activation=tf.nn.relu),
+            tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='VALID'),
+            tf.keras.layers.Dropout(.5),
+
+            tf.keras.layers.Conv2D(64, (4, 4), activation=tf.nn.relu, padding='SAME'),
+            tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
+            tf.keras.layers.Dropout(.5),
+
+            tf.keras.layers.Conv2D(64, (4, 4), activation=tf.nn.relu, padding='SAME'),
+            tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
+            tf.keras.layers.Dropout(.5),
+
+            tf.keras.layers.Conv2D(64, (4, 4), activation=tf.nn.relu, padding='SAME'),
+            tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
+            tf.keras.layers.Dropout(.5),
+
             tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(1000, activation=tf.nn.relu),
+            tf.keras.layers.Dense(1000, activation=tf.nn.sigmoid),
             tf.keras.layers.Dense(N_CATEGORIES, activation='softmax')
         ])
         adam = tf.keras.optimizers.Adam(lr=LEARN_RATE)
@@ -226,12 +238,12 @@ class Application(tk.Frame):
 
         self.printLine('Saving...')
 
-        if self.model_type == tk.IntVar(value=2):
+        if self.model_type.get() == 2:
             self.model.save_weights('./LSTMweights')
             print("Saved to: ./LSTMweights")
             self.printLine('Saved to: ./LSTMweights')
 
-        elif self.model_type == tk.IntVar(value=1):
+        elif self.model_type.get() == 1:
             self.model.save_weights('./CNNweights')
             self.printLine('Saved to: ./CNNweights')
 
