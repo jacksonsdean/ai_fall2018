@@ -15,7 +15,7 @@ N_FFT      = 512
 N_MELS     = 96
 N_OVERLAP  = 256
 DURA       = 29.12
-
+N_SONGS = 1000
 def log_scale_melspectrogram(path, plot=False):
     signal, sr = lb.load(path, sr=Fs)
     n_sample = signal.shape[0]
@@ -48,7 +48,7 @@ def get_labels(labels_dense=labels['label'], num_classes=10):
     labels_one_hot = np.zeros((num_labels, num_classes))
     labels_one_hot.flat[index_offset + labels_dense.ravel()] = 1
     return labels_one_hot
-
+# [0 0 0 0 1 0 0 0 0]
 
 def get_melspectrograms_indexed(index, labels_dense=labels, num_classes=10):
     spectrograms = np.asarray([log_scale_melspectrogram(i) for i in labels_dense['path'][index]])
@@ -59,31 +59,40 @@ def get_melspectrograms_indexed(index, labels_dense=labels, num_classes=10):
 # OUR CODE BELOW HERE:
 #########################################
 
-def mel(path):
-    y, sr = lb.load(path, mono=True)
-    specto = lb.feature.melspectrogram(y=y, sr=sr, n_mels=128, n_fft=2048, hop_length=1024)
-    specto = lb.power_to_db(specto, ref=np.max)
-
-
 def preprocess(labels):
     """Given the labels array, produce two arrays, the first is the labels and the second is the
     corresponding data. The index of the labels array matches the index of the data array."""
     train_labels = []
-    train_data = []
+    train_data = np.empty([N_SONGS, 1366, 96])
     print("Starting Data Process: ")
     print("\t" + str(len(labels)), "labels found...",end="\n\t")
-    for i in range(len(labels)):
-    # for i in range(10):
+    for i in range(N_SONGS):
+
         path = labels['path'][i]
+
         label = int(labels['label'][i])
         train_labels.append(label)
-        data = log_scale_melspectrogram(path)
-        # data = mel(path)
-        train_data.append(data)
-        percent_done = round((i/len(labels))*100, 2)
+
+        # data = log_scale_melspectrogram(path)
+        data = ourMel(path)
+
+        np.append(train_data, data)
+        # train_data.append(data)
+        percent_done = round((i/len(labels))*100,2)
         print(str(percent_done) + "% done" + "."*(i%4), end="\r\t")
     print()
-    return np.array(train_labels), np.array(train_data)
+
+    return np.array(train_labels), train_data
+
+
+
+def ourMel(path):
+    y, sr = lb.load(path, mono=True)
+    spectogram = lb.feature.melspectrogram(y=y, sr=sr, n_mels = 96, n_fft = 2048, hop_length =256)
+    spectogram = lb.power_to_db(spectogram, ref=np.max)
+    return spectogram
+
+
 
 if __name__ == '__main__':
     labels_file = 'labels.csv'
@@ -92,9 +101,9 @@ if __name__ == '__main__':
     out = preprocess(labels)
 
     # np.save("labels.npy", out[0])
-    np.save("labels.npy", get_labels())
+    np.save("labels2.npy", get_labels()[:N_SONGS])
     print("labels array saved to labels.npy")
-    np.save("data.npy", out[1])
-    print("data array saved to data.npy")
+    np.save("data2.npy", out[1])
+    print("data array saved to data2.npy")
 
 
