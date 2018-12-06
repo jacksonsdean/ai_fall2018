@@ -1,15 +1,13 @@
 import numpy as np
 import tensorflow as tf
+import librosa as lb
+import matplotlib.pyplot as plt
 import tkinter as tk
+
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 from tkinter import messagebox
 
-import sys
-
-import matplotlib.pyplot as plt
-
-import librosa as lb
 
 N_SAMPLES = 1000
 TRAIN_SPLIT = 0.8
@@ -30,7 +28,7 @@ class Application(tk.Frame):
         self.lineMax = 3
 
         self. input_shape = [96, 1366]
-        self.model_type = 1
+        self.model_type = tk.IntVar()
         self.model_built = False
 
         self.batch_size = 0
@@ -40,27 +38,41 @@ class Application(tk.Frame):
 
     def create_widgets(self):
         self.winfo_toplevel().title("COMP 484 Music Classifier")
-        self.model_type = tk.IntVar()
+        self.typeFrame = tk.LabelFrame(self, text="Model Type", padx=5, pady=5)
+        self.typeFrame.grid(row=1, column=0,rowspan=2)
+        self.typeFrame.config(bd=1)
+        rb1 = tk.Radiobutton(self.typeFrame, text="CNN", variable=self.model_type, value=1, command=lambda: self.changeType(1))
+        # rb1.config(bg="#272323", fg="#ffffff")
+        rb1.pack(anchor="n")
+        rb2 = tk.Radiobutton(self.typeFrame, text="LSTM", variable=self.model_type, value=2, command=lambda: self.changeType(2))
+        # rb2.config(bg="#272323", fg="#ffffff")
+        rb2.pack(anchor="n")
 
-        tk.Radiobutton(self, text="CNN", variable=self.model_type, value=1, command=lambda: self.changeType(1)).grid(row=1, column=0,padx=5,pady=(15,5))
-        tk.Radiobutton(self, text="LSTM", variable=self.model_type, value=2, command=lambda: self.changeType(2)).grid(row=2,column=0,padx=5,pady=5)
+
+
         self.model_type.set(1)
 
+        self.btnFrame = tk.LabelFrame(self, text="", padx=5, pady=5)
 
+        self.btnFrame.grid(row=1, column=2, rowspan=2)
+        self.btnFrame.config(bd=1)
 
-        self.train_btn = tk.Button(self)
+        self.train_btn = tk.Button(self.btnFrame)
         self.train_btn["text"] = " Train "
         self.train_btn["command"] = self.train
-        self.train_btn.grid(row=1, column=2,pady=(15,5), padx=5)
+        self.train_btn.config(width = 10)
+        self.train_btn.grid(row=1, column=2,pady=0, padx=5)
 
-        self.predict_btn = tk.Button(self)
+        self.predict_btn = tk.Button(self.btnFrame)
         self.predict_btn["text"] = "Predict"
         self.predict_btn["command"] = self.predict
-        self.predict_btn.grid(row=2, column=2,pady=5, padx=5)
+        self.predict_btn.config(width = 10)
+
+        self.predict_btn.grid(row=2, column=2,pady=0, padx=5)
 
         self.out = tk.Text(self, state='disabled',height=4, width = 30, background="#272323", fg="#ffffff")
         self.out.tag_config("right", justify=tk.RIGHT)
-        self.out.grid(row = 4, columnspan=3, pady=30, padx=20)
+        self.out.grid(row = 4, columnspan=3, pady=20, padx=20)
 
         self.out.delete(1.0, tk.END)
         self.printLine("Started")
@@ -77,12 +89,9 @@ class Application(tk.Frame):
         self.lineCount += 1
 
 
-
     def changeType(self, type):
-        self.model_type = type
-        self.model_type.set(type)
-
         self.model_built = False
+        self.model_type.set(type)
 
     def buildLSTMModel(self):
         print("Building LSTM...")
@@ -126,11 +135,12 @@ class Application(tk.Frame):
         self.model_built = True
 
     def train(self):
+        self.printLine("Model built: " + str(self.model_built))
         self.valid = False
         window = tk.Toplevel(self)
         window.grab_set()
-        batch_L = tk.Label(window, text="Batch Size: ", anchor="e").grid(row=0, column=0)
-        epoch_L = tk.Label(window, text="Epochs: ", anchor="e").grid(row=1, column=0)
+        tk.Label(window, text="Batch Size: ", anchor="e").grid(row=0, column=0)
+        tk.Label(window, text="Epochs: ", anchor="e").grid(row=1, column=0)
 
 
         batch_entry = tk.Entry(window)
@@ -154,7 +164,6 @@ class Application(tk.Frame):
             except ValueError:
                 return
 
-
         go_btn = tk.Button(window, command=lambda: go(self))
         go_btn["text"] = "Go"
         go_btn.grid(row=2, column=1)
@@ -165,16 +174,15 @@ class Application(tk.Frame):
             self.printLine("Cancelling..")
             return
 
-
         x_train, x_test, y_train, y_test = self.getData()
 
         if not self.model_built or self.model == None:
-            if (self.model_type == 1):
+            if (self.model_type == tk.IntVar(value=1)):
                 self.buildCNNModel()
                 x_train = x_train.reshape([-1, 96, 1366, 1])
                 x_test = x_test.reshape([-1, 96, 1366, 1])
 
-            elif (self.model_type == 2):
+            elif (self.model_type == tk.IntVar(value=2)):
                 self.buildLSTMModel()
 
         history = AccuracyHistory()
@@ -203,12 +211,12 @@ class Application(tk.Frame):
 
         self.printLine('Saving...')
 
-        if self.model_type == 2:
+        if self.model_type == tk.IntVar(value=2):
             self.model.save_weights('./LSTMweights')
             print("Saved to: ./LSTMweights")
             self.printLine('Saved to: ./LSTMweights')
 
-        elif self.model_type == 1:
+        elif self.model_type == tk.IntVar(value=1):
             self.model.save_weights('./CNNweights')
             self.printLine('Saved to: ./CNNweights')
 
@@ -249,16 +257,19 @@ class Application(tk.Frame):
 
     def predict(self):
         classes = ["jazz", "blues", "reggae", "pop", "disco", "country", "metal", "hiphop", "rock", "classical"]
-        classes = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
+        # classes = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
 
         # self.grab_set()
-
-        if not self.model_built or self.model == None:
-            if (self.model_type == 1):
+        if (not self.model_built) or self.model == None:
+            if (self.model_type == tk.IntVar(value=1)):
                 self.buildCNNModel()
+
                 self.model.load_weights("./CNNweights")
-            elif (self.model_type == 2):
+            elif (self.model_type == tk.IntVar(value=2)):
                 self.buildLSTMModel()
+                with open("weights") as f:
+                    for i in range(1):
+                        self.printLine(f.readline())
                 self.model.load_weights("./LSTMweights")
 
         self.printLine("Model built, choose file...")
@@ -266,14 +277,17 @@ class Application(tk.Frame):
 
         Tk().withdraw()
         path = askopenfilename(initialdir="./data")
+        if path == "":
+            self.printLine("please choose a file")
+            return
         self.printLine("Predicting...")
-        #
-        #
-        # score = self.model.evaluate(self.getData()[0], self.getData()[2])
-        # print('Pred loss:', score[0])
-        # print('Pred accuracy:', score[1])
-        # string = 'Loss:\n\t' +  str(score[0]) + "\nAcc:\n\t" + str(score[1])
-        # messagebox.showinfo("Test", string)
+
+        test = False
+        if(test):
+            score = self.model.evaluate(self.getData()[0], self.getData()[2])
+
+            string = 'Loss:\n\t' +  str(score[0]) + "\nAcc:\n\t" + str(score[1])
+            messagebox.showinfo("Test", string)
 
         y, sr = lb.load(path, mono=True)
         spectogram = lb.feature.melspectrogram(y=y, sr=sr, n_mels=96, n_fft=2048, hop_length=256)
@@ -306,11 +320,10 @@ class AccuracyHistory(tf.keras.callbacks.Callback):
 
 
 if __name__ == '__main__':
-    model_type = 0
-
     root = tk.Tk()
     app = Application(master=root)
     app.mainloop()
+    quit()
 
 
 
