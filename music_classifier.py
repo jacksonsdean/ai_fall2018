@@ -3,16 +3,20 @@ import tensorflow as tf
 import librosa as lb
 import matplotlib.pyplot as plt
 import tkinter as tk
+import pandas as pd
+import os
 
+from sys import platform
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 from tkinter import messagebox
-from IPython.display import clear_output
+from subprocess import Popen
+
 
 
 N_SAMPLES = 1000
 TRAIN_SPLIT = 0.8
-LEARN_RATE = 0.0003 # default: 0.003
+LEARN_RATE = 0.003 # default: 0.003
 N_CATEGORIES = 10
 
 train_size = int(N_SAMPLES * TRAIN_SPLIT)
@@ -282,9 +286,9 @@ class Application(tk.Frame):
 
         return x_train, x_test, y_train, y_test
 
+
     def predict(self):
         classes = ["jazz", "blues", "reggae", "pop", "disco", "country", "metal", "hiphop", "rock", "classical"]
-        # classes = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
 
         if (not self.model_built) or self.model == None:
             if (self.model_type.get() == 1):
@@ -305,7 +309,12 @@ class Application(tk.Frame):
             return
         self.printLine("Predicting...")
 
-        test = True
+        # play!
+        if platform == "linux" or platform == "linux2":
+            pop = Popen(['aplay', path])
+
+
+        test = False
         if(test):
             x_train, x_test, y_train, y_test = self.getData()
             score = self.model.evaluate(x_train, y_train)
@@ -318,13 +327,33 @@ class Application(tk.Frame):
 
         predict_data = np.empty([1, 1366, 96])
         np.append(predict_data, spectogram)
+        predict_data = predict_data.reshape(1, 96, 1366)
 
-        prediction = self.model.predict(predict_data.reshape(1, 96, 1366))
+        if (self.model_type.get() == 1):
+            predict_data = predict_data.reshape([-1, 96, 1366, 1])
+
+        prediction = self.model.predict(predict_data)
         pred_class = prediction.argmax()
         self.printLine("Built spectrogram...")
         string = "Computer thinks the genre of this song is:\n" + classes[pred_class]
-        string += "\n\nwith:\n" + str(prediction[0][pred_class]*100) + "% certainty"
+        string += "\n\nwith:\n" + str(prediction[0][pred_class]*100) + "% certainty\n\n"
+        for i in range(prediction.shape[1]):
+            string += str(prediction[0][i]*100)[:5] + "% "+ classes[i] +"\n"
+
+        labels = pd.read_csv("./data/labels.csv", header=0)
+        i = 0
+        correct = ""
+        for p in labels["path"]:
+            p = "/".join(p.split("/")[-3:])
+            # self.printLine("P: "+p)
+            if p == "/".join(path.split("/")[-3:]):
+                correct = labels['label'][i]
+            i += 1
+        string += "\nCorrect genre was: " + str.upper(classes[int(correct)])
         messagebox.showinfo("Prediction", string)
+        if platform == "linux" or platform == "linux2":
+            os.system("pkill aplay")
+            pop.terminate()
 
         self.printLine("Done")
 
