@@ -42,6 +42,8 @@ class Application(tk.Frame):
         self.n_epoch = 0
         self.plot = tk.IntVar()
         self.plot.set(0)
+        self.stats = tk.IntVar()
+        self.stats.set(0)
         self.create_widgets()
 
     def create_widgets(self):
@@ -57,12 +59,22 @@ class Application(tk.Frame):
         rb2.pack(anchor="n")
 
 
+        self.optFrame = tk.LabelFrame(self, text="Options", padx=5, pady=5)
+        self.optFrame.grid(row=1, column=1, rowspan=2, pady=(10, 0), padx=0)
+        self.optFrame.config(bd=1, height=40)
+        c = tk.Checkbutton(self.optFrame, text="Plot", variable=self.plot, anchor="w")
+        c.config(bd=2)
+        c.grid(row=1, column=1, sticky="w")
+        s = tk.Checkbutton(self.optFrame, text="Stats", variable=self.stats, anchor="w")
+        s.config(bd=2)
+        s.grid(row=2, column=1,sticky="w")
+
 
         self.model_type.set(1)
 
         self.btnFrame = tk.LabelFrame(self, text="", padx=5, pady=5)
 
-        self.btnFrame.grid(row=1, column=2, rowspan=2, pady=(10,0), padx=10)
+        self.btnFrame.grid(row=1, column=2, rowspan=2, pady=(10,0), padx=5)
         self.btnFrame.config(bd=1, height=40)
 
         self.train_btn = tk.Button(self.btnFrame)
@@ -72,20 +84,15 @@ class Application(tk.Frame):
         self.train_btn.grid(row=1,column= 0, pady=0, padx=(5,0),sticky="w")
 
 
-        c = tk.Checkbutton(self.btnFrame, text="Plot", variable=self.plot)
-        c.grid(row=1, column=1)
-
-
         self.predict_btn = tk.Button(self.btnFrame)
         self.predict_btn["text"] = "Predict"
         self.predict_btn["command"] = self.predict
-        self.predict_btn.config(width = 16)
+        self.predict_btn.config(width = 8)
         self.predict_btn.grid(row=2, column=0,columnspan=2,  pady=0, padx=5)
 
-        self.out = tk.Text(self, state='disabled',height=4, width = 30, background="#272323", fg="#ffffff")
+        self.out = tk.Text(self, state='disabled',height=4, width = 50, background="#272323", fg="#ffffff")
         self.out.tag_config("right", justify=tk.RIGHT)
         self.out.grid(row = 4, columnspan=3, pady=(20,0), padx=20)
-        # self.out.delete(1.0, tk.END)
         self.printLine("Started")
 
         self.q_btn = tk.Button(self)
@@ -129,7 +136,7 @@ class Application(tk.Frame):
     def buildCNNModel(self):
         print("Building CNN...")
         self.printLine('Building CNN....')
-        rate = float(.9999999999999)
+        rate = float(.03)
         if self.is_train:
             rate = float(0.3)
 
@@ -328,12 +335,20 @@ class Application(tk.Frame):
             os.system("start " + path)
 
 
-        test = False
-        if(test):
+        if(self.stats):
             x_train, x_test, y_train, y_test = self.getData()
-            score = self.model.evaluate(x_train, y_train)
+            if self.model_type.get() == 1:
+                x_train = x_train.reshape([-1, 96, 1366, 1])
+                x_test = x_test.reshape([-1, 96, 1366, 1])
+
+            x = np.concatenate((x_train,x_test), axis=0)
+            y = np.concatenate((y_train,y_test),axis=0)
+
+            score = self.model.evaluate(x, y)
             string = 'Loss:\n\t' +  str(score[0]) + "\nAcc:\n\t" + str(score[1])
             messagebox.showinfo("Test", string)
+
+
 
         # Build the spectrogram for this song:
         y, sr = lb.load(path, mono=True)
