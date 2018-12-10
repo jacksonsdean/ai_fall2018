@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import tkinter as tk
 import pandas as pd
 import os
+from time import time
 
 from sys import platform
 from tkinter import Tk
@@ -16,7 +17,7 @@ from subprocess import Popen
 
 N_SAMPLES = 1000
 TRAIN_SPLIT = 0.8
-LEARN_RATE = 0.003 # default: 0.003
+CNN_LEARN_RATE = 0.0005 # default: 0.003
 N_CATEGORIES = 10
 
 train_size = int(N_SAMPLES * TRAIN_SPLIT)
@@ -35,6 +36,7 @@ class Application(tk.Frame):
         self. input_shape = [96, 1366]
         self.model_type = tk.IntVar()
         self.model_built = False
+        self.is_train = True
 
         self.batch_size = 0
         self.n_epoch = 0
@@ -127,36 +129,40 @@ class Application(tk.Frame):
     def buildCNNModel(self):
         print("Building CNN...")
         self.printLine('Building CNN....')
+        rate = float(.99)
+        if self.is_train:
+            rate = float(0.3)
 
-        self.input_shape = self.input_shape + [1]
+        cnn_input_shape = self.input_shape + [1]
 
         self.model = tf.keras.models.Sequential([
             tf.keras.layers.Conv2D(32, kernel_size=(4, 4),
                                    strides=(4, 4),  # X and Y to move the window by
                                    activation=tf.nn.relu,
-                                   input_shape=self.input_shape,
+                                   input_shape=cnn_input_shape,
                                    padding='SAME'),
             # tf.keras.layers.Dense(512, activation=tf.nn.relu),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='VALID'),
-            tf.keras.layers.Dropout(.5),
+            # tf.keras.layers.Dropout(rate=rate),
 
             tf.keras.layers.Conv2D(64, (4, 4), activation=tf.nn.relu, padding='SAME'),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
-            tf.keras.layers.Dropout(.5),
+            # tf.keras.layers.Dropout(rate=rate),
 
             tf.keras.layers.Conv2D(64, (4, 4), activation=tf.nn.relu, padding='SAME'),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
-            tf.keras.layers.Dropout(.5),
+            # tf.keras.layers.Dropout(rate=rate),
 
-            tf.keras.layers.Conv2D(64, (4, 4), activation=tf.nn.relu, padding='SAME'),
+            tf.keras.layers.Conv2D(128, (4, 4), activation=tf.nn.relu, padding='SAME'),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
-            tf.keras.layers.Dropout(.5),
+            # tf.keras.layers.Dropout(rate=rate),
 
             tf.keras.layers.Flatten(),
+
             tf.keras.layers.Dense(1000, activation=tf.nn.sigmoid),
             tf.keras.layers.Dense(N_CATEGORIES, activation='softmax')
         ])
-        adam = tf.keras.optimizers.Adam(lr=LEARN_RATE)
+        adam = tf.keras.optimizers.Adam(lr=CNN_LEARN_RATE)
         self.model.compile(optimizer=adam,
                       loss=tf.keras.losses.categorical_crossentropy,
                       metrics=['accuracy'])
@@ -164,6 +170,7 @@ class Application(tk.Frame):
 
     def train(self):
         self.valid = False
+        self.is_train = True
         window = tk.Toplevel(self)
         window.grab_set()
         tk.Label(window, text="Batch Size: ", anchor="e").grid(row=0, column=0)
@@ -238,7 +245,7 @@ class Application(tk.Frame):
 
         print("Saving...")
 
-        string = 'Loss:' +  str(score[0]) + "\nAcc:" + str(score[1])
+        string = 'Loss:' +  str(score[0]) + "\nAcc:" + str(score[1]) + "\nAvg epoch time:" + str(np.mean(history.times))[:6] + " seconds"
         messagebox.showinfo("Test", string)
 
 
@@ -292,6 +299,7 @@ class Application(tk.Frame):
 
 
     def predict(self):
+        self.is_train = False
         classes = ["jazz", "blues", "reggae", "pop", "disco", "country", "metal", "hiphop", "rock", "classical"]
 
         if (not self.model_built) or self.model == None:
@@ -399,6 +407,11 @@ class AccuracyHistory(tf.keras.callbacks.Callback):
         self.val_losses = []
         self.val_acc = []
 
+        self.times = []
+
+        self.s_time = time()
+        self.e_time = 0
+
         if(self.plotting):
             plt.ion()
             plt.show()
@@ -406,6 +419,9 @@ class AccuracyHistory(tf.keras.callbacks.Callback):
             self.ax1.set_yscale('log')
 
     def on_epoch_end(self, batch, logs={}):
+        self.times.append(time()-self.s_time)
+        self.s_time = time()
+
         self.e_counter += 1
         self.acc.append(logs.get('acc'))
         self.loss.append(logs.get('loss'))
