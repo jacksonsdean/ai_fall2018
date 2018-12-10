@@ -129,7 +129,7 @@ class Application(tk.Frame):
     def buildCNNModel(self):
         print("Building CNN...")
         self.printLine('Building CNN....')
-        rate = float(.99)
+        rate = float(.9999999999999)
         if self.is_train:
             rate = float(0.3)
 
@@ -143,19 +143,19 @@ class Application(tk.Frame):
                                    padding='SAME'),
             # tf.keras.layers.Dense(512, activation=tf.nn.relu),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='VALID'),
-            # tf.keras.layers.Dropout(rate=rate),
+            tf.keras.layers.Dropout(rate=rate),
 
             tf.keras.layers.Conv2D(64, (4, 4), activation=tf.nn.relu, padding='SAME'),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
-            # tf.keras.layers.Dropout(rate=rate),
+            tf.keras.layers.Dropout(rate=rate),
 
             tf.keras.layers.Conv2D(64, (4, 4), activation=tf.nn.relu, padding='SAME'),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
-            # tf.keras.layers.Dropout(rate=rate),
+            tf.keras.layers.Dropout(rate=rate),
 
             tf.keras.layers.Conv2D(128, (4, 4), activation=tf.nn.relu, padding='SAME'),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
-            # tf.keras.layers.Dropout(rate=rate),
+            tf.keras.layers.Dropout(rate=rate),
 
             tf.keras.layers.Flatten(),
 
