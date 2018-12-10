@@ -221,12 +221,16 @@ class Application(tk.Frame):
 
         self.printLine("Training...")
 
-        self.model.fit(x_train, y_train,
-                  batch_size=self.batch_size,
-                  epochs=self.n_epoch,
-                  verbose=1,
-                  validation_data=(x_test, y_test),
-                  callbacks=[history])
+        try:
+            self.model.fit(x_train, y_train,
+                      batch_size=self.batch_size,
+                      epochs=self.n_epoch,
+                      verbose=1,
+                      validation_data=(x_test, y_test),
+                      callbacks=[history])
+        except: # real sketchy, but we don't want tensorflow to error silently in the background
+            self.printLine("Tensorflow had error during train")
+            return
 
         score = self.model.evaluate(x_test, y_test)
         print('Test loss:', score[0])
@@ -312,6 +316,8 @@ class Application(tk.Frame):
         # play!
         if platform == "linux" or platform == "linux2":
             pop = Popen(['aplay', path])
+        elif os.name == "nt":
+            os.system("start " + path)
 
 
         test = False
@@ -321,18 +327,36 @@ class Application(tk.Frame):
             string = 'Loss:\n\t' +  str(score[0]) + "\nAcc:\n\t" + str(score[1])
             messagebox.showinfo("Test", string)
 
+        # Build the spectrogram for this song:
         y, sr = lb.load(path, mono=True)
-        spectogram = lb.feature.melspectrogram(y=y, sr=sr, n_mels=96, n_fft=2048, hop_length=256)
-        spectogram = lb.power_to_db(spectogram, ref=np.max)
+        spectrogram = lb.feature.melspectrogram(y=y, sr=sr, n_mels=96, n_fft=2048, hop_length=256)
+        spectrogram = lb.power_to_db(spectrogram, ref=np.max)
+
+        if(self.plot.get()):
+            spectrogram = spectrogram[np.newaxis, :]
+            plt.imshow(spectrogram.reshape((spectrogram.shape[1], spectrogram.shape[2])))
+            plt.ion()
+            plt.show()
+            plt.draw()
+            plt.pause(0.001)
 
         predict_data = np.empty([1, 1366, 96])
-        np.append(predict_data, spectogram)
-        predict_data = predict_data.reshape(1, 96, 1366)
+        np.append(predict_data, spectrogram)
+        # predict_data = predict_data.reshape(1, 96, 1366)
+
+        predict_data = predict_data.reshape([1] + self.input_shape)
+
 
         if (self.model_type.get() == 1):
             predict_data = predict_data.reshape([-1, 96, 1366, 1])
 
-        prediction = self.model.predict(predict_data)
+        # Do prediction
+        try:
+            prediction = self.model.predict(predict_data)
+        except: # real sketchy, but we don't want tensorflow to error silently in the background
+            self.printLine("Tensorflow had error during preduction")
+            return
+
         pred_class = prediction.argmax()
         self.printLine("Built spectrogram...")
         string = "Computer thinks the genre of this song is:\n" + classes[pred_class]

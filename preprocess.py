@@ -86,11 +86,17 @@ def preprocess(labels):
 
 
 
-def ourMel(path):
+def ourMel(path, plot=False):
     y, sr = lb.load(path, mono=True)
-    spectogram = lb.feature.melspectrogram(y=y, sr=sr, n_mels = 96, n_fft = 2048, hop_length =256)
-    spectogram = lb.power_to_db(spectogram, ref=np.max)
-    return spectogram
+    spectrogram = lb.feature.melspectrogram(y=y, sr=sr, n_mels = 96, n_fft = 2048, hop_length =256)
+    spectrogram = lb.power_to_db(spectrogram, ref=np.max)
+
+    if plot:
+        spectrogram = spectrogram[np.newaxis, :]
+        plt.imshow(spectrogram.reshape((spectrogram.shape[1], spectrogram.shape[2])))
+        plt.show()
+
+    return spectrogram
 
 
 
@@ -101,9 +107,9 @@ if __name__ == '__main__':
     out = preprocess(labels)
 
     # np.save("labels.npy", out[0])
-    np.save("labels2.npy", get_labels()[:N_SONGS])
+    np.save("labels.npy", get_labels()[:N_SONGS])
     print("labels array saved to labels.npy")
-    np.save("data2.npy", out[1])
+    np.save("data.npy", out[1])
     print("data array saved to data2.npy")
 
 
