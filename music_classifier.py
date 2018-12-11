@@ -10,7 +10,7 @@ import os
 from time import time
 
 from sys import platform
-from tkinter import Tk
+# from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 from tkinter import messagebox
 from subprocess import Popen
