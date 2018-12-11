@@ -42,41 +42,38 @@ class Application(tk.Frame):
 
         self.batch_size = 0
         self.n_epoch = 0
-        self.plot = tk.IntVar()
-        self.plot.set(0)
+        self.train_plot = tk.IntVar()
+        self.train_plot.set(0)
+        self.mel_plot = tk.IntVar()
+        self.mel_plot.set(0)
         self.stats = tk.IntVar()
         self.stats.set(0)
+        self.play_song = tk.IntVar()
+        self.play_song.set(0)
         self.create_widgets()
 
     def create_widgets(self):
         self.winfo_toplevel().title("Music Classifier COMP 484")
-        self.typeFrame = tk.LabelFrame(self, text="Model Type", padx=5, pady=5)
-        self.typeFrame.grid(row=1, column=0,rowspan=2, pady=(10,0), padx=(10,0))
-        self.typeFrame.config(bd=1, height=40)
-        rb1 = tk.Radiobutton(self.typeFrame, text="CNN", variable=self.model_type, value=1, command=lambda: self.changeType(1))
-        # rb1.config(bg="#272323", fg="#ffffff")
-        rb1.pack(anchor="n")
-        rb2 = tk.Radiobutton(self.typeFrame, text="LSTM", variable=self.model_type, value=2, command=lambda: self.changeType(2))
-        # rb2.config(bg="#272323", fg="#ffffff")
-        rb2.pack(anchor="n")
 
 
-        self.optFrame = tk.LabelFrame(self, text="Options", padx=5, pady=5)
-        self.optFrame.grid(row=1, column=1, rowspan=2, pady=(10, 0), padx=0)
+
+        self.optFrame = tk.LabelFrame(self, text="", padx=5, pady=5)
+        self.optFrame.grid(row=1, column=0, rowspan=1, pady=(10, 0), padx=5)
         self.optFrame.config(bd=1, height=40)
-        c = tk.Checkbutton(self.optFrame, text="Plot", variable=self.plot, anchor="w")
-        c.config(bd=2)
-        c.grid(row=1, column=1, sticky="w")
-        s = tk.Checkbutton(self.optFrame, text="Stats", variable=self.stats, anchor="w")
-        s.config(bd=2)
-        s.grid(row=2, column=1,sticky="w")
+
+
+        optBtn = tk.Button(self.optFrame)
+        optBtn["text"] = "Configure"
+        optBtn["command"] = self.optionsWindow
+        optBtn.config(width=8)
+        optBtn.grid(row=2, column=1, sticky="w")
 
 
         self.model_type.set(1)
 
         self.btnFrame = tk.LabelFrame(self, text="", padx=5, pady=5)
 
-        self.btnFrame.grid(row=1, column=2, rowspan=2, pady=(10,0), padx=5)
+        self.btnFrame.grid(row=1, column=1, columnspan=1, pady=(10,0), padx=5)
         self.btnFrame.config(bd=1, height=40)
 
         self.train_btn = tk.Button(self.btnFrame)
@@ -90,7 +87,7 @@ class Application(tk.Frame):
         self.predict_btn["text"] = "Predict"
         self.predict_btn["command"] = self.predict
         self.predict_btn.config(width = 8)
-        self.predict_btn.grid(row=2, column=0,columnspan=2,  pady=0, padx=5)
+        self.predict_btn.grid(row=1, column=1,columnspan=2,  pady=0, padx=5)
 
         self.out = tk.Text(self, state='disabled',height=4, width = 50, background="#272323", fg="#ffffff")
         self.out.tag_config("right", justify=tk.RIGHT)
@@ -103,6 +100,51 @@ class Application(tk.Frame):
         self.q_btn.config(fg = "red", width = 20)
         self.q_btn.grid(row = 5, column=0, columnspan=3, pady=(5,10))
 
+    def optionsWindow(self):
+
+
+
+
+
+        window = tk.Toplevel(self)
+        window.grab_set()
+
+        self.typeFrame = tk.LabelFrame(window, text="Model Type", padx=5, pady=5)
+        self.typeFrame.grid(row=0, column=0, rowspan=2, pady=10, padx=10)
+        self.typeFrame.config(bd=1, height=40)
+        rb1 = tk.Radiobutton(self.typeFrame, text="CNN", variable=self.model_type, value=1,
+                             command=lambda: self.changeType(1))
+        # rb1.config(bg="#272323", fg="#ffffff")
+        rb1.pack(anchor="n")
+        rb2 = tk.Radiobutton(self.typeFrame, text="LSTM", variable=self.model_type, value=2,
+                             command=lambda: self.changeType(2))
+        # rb2.config(bg="#272323", fg="#ffffff")
+        rb2.pack(anchor="n")
+
+
+        optionsFrame = tk.LabelFrame(window, text="Options", padx=5, pady=5)
+        optionsFrame.grid(row=2, column=0, rowspan=4, pady=(10, 5), padx=10)
+
+        tp = tk.Checkbutton(optionsFrame, text="Show Train Plot", variable=self.train_plot, anchor="w")
+        tp.config(bd=2)
+        tp.grid(row=2, column=0, sticky="w")
+
+        mp = tk.Checkbutton(optionsFrame, text="Show Prediction Spectrogram", variable=self.mel_plot, anchor="w")
+        mp.config(bd=2)
+        mp.grid(row=3, column=0, sticky="w")
+
+        s = tk.Checkbutton(optionsFrame, text="Show Prediction Stats", variable=self.stats, anchor="w")
+        s.config(bd=2)
+        s.grid(row=4, column=0, sticky="w")
+
+        pp = tk.Checkbutton(optionsFrame, text="Play Prediction Song", variable=self.play_song, anchor="w")
+        pp.config(bd=2)
+        pp.grid(row=5, column=0, sticky="w")
+
+        close = tk.Button(window)
+        close["text"] = "Close"
+        close["command"] = window.destroy
+        close.grid(row=6)
 
     def printLine(self, text):
         self.out.configure(state='normal')
@@ -230,7 +272,7 @@ class Application(tk.Frame):
             elif (self.model_type.get() == 2):
                 self.buildLSTMModel()
 
-        history = AccuracyHistory(plotting=self.plot)
+        history = AccuracyHistory(plotting=self.train_plot)
 
 
         self.printLine("Training...")
@@ -243,8 +285,9 @@ class Application(tk.Frame):
                       validation_data=(x_test, y_test),
                       callbacks=[history],
                       shuffle=False)
-        except: # real sketchy, but we don't want tensorflow to error silently in the background
+        except Exception as e: # real sketchy, but we don't want tensorflow to error silently in the background
             self.printLine("Tensorflow had error during train")
+            messagebox.showerror("error", e)
             return
 
         score = self.model.evaluate(x_test, y_test)
@@ -330,10 +373,11 @@ class Application(tk.Frame):
         self.printLine("Predicting...")
 
         # play!
-        if platform == "linux" or platform == "linux2":
-            pop = Popen(['aplay', path])
-        elif os.name == "nt":
-            os.system("start " + path)
+        if self.play_song.get():
+            if platform == "linux" or platform == "linux2":
+                pop = Popen(['aplay', path])
+            elif os.name == "nt":
+                os.system("start " + path)
 
 
         if(self.stats.get()):
@@ -356,7 +400,7 @@ class Application(tk.Frame):
         spectrogram = lb.feature.melspectrogram(y=y, sr=sr, n_mels=96, n_fft=2048, hop_length=256)
         spectrogram = lb.power_to_db(spectrogram, ref=np.max)
 
-        if(self.plot.get()):
+        if(self.mel_plot.get()):
             spectrogram = spectrogram[np.newaxis, :]
             plt.imshow(spectrogram.reshape((spectrogram.shape[1], spectrogram.shape[2])))
             plt.ion()
@@ -404,9 +448,11 @@ class Application(tk.Frame):
             i += 1
         string += "\nCorrect genre was: " + str.upper(classes[int(correct)])
         messagebox.showinfo("Prediction", string)
-        if platform == "linux" or platform == "linux2":
-            os.system("pkill aplay")
-            pop.terminate()
+
+        if self.play_song.get():
+            if platform == "linux" or platform == "linux2":
+                os.system("pkill aplay")
+                pop.terminate()
 
         self.printLine("Done")
 
