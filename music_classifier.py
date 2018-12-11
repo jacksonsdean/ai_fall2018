@@ -138,9 +138,7 @@ class Application(tk.Frame):
     def buildCNNModel(self):
         print("Building CNN...")
         self.printLine('Building CNN....')
-        rate = float(.03)
-        if self.is_train:
-            rate = float(0.3)
+
 
         cnn_input_shape = self.input_shape + [1]
 
@@ -152,19 +150,19 @@ class Application(tk.Frame):
                                    padding='SAME'),
             # tf.keras.layers.Dense(512, activation=tf.nn.relu),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='VALID'),
-            tf.keras.layers.Dropout(rate=rate),
+            tf.keras.layers.Dropout(.3),
 
             tf.keras.layers.Conv2D(64, (4, 4), activation=tf.nn.relu, padding='SAME'),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
-            tf.keras.layers.Dropout(rate=rate),
+            tf.keras.layers.Dropout(.3),
 
             tf.keras.layers.Conv2D(64, (4, 4), activation=tf.nn.relu, padding='SAME'),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
-            tf.keras.layers.Dropout(rate=rate),
+            tf.keras.layers.Dropout(.3),
 
             tf.keras.layers.Conv2D(128, (4, 4), activation=tf.nn.relu, padding='SAME'),
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
-            tf.keras.layers.Dropout(rate=rate),
+            tf.keras.layers.Dropout(.3),
 
             tf.keras.layers.Flatten(),
 
@@ -375,10 +373,15 @@ class Application(tk.Frame):
 
         if (self.model_type.get() == 1):
             predict_data = predict_data.reshape([-1, 96, 1366, 1])
-
+        self.printLine("Predicting...")
+        prediction = []
         # Do prediction
         try:
-            prediction = self.model.predict(predict_data)   
+            for i in range(1000):
+                p = self.model.predict(predict_data)
+                prediction.append(p)
+            prediction = np.array(prediction)
+            prediction = np.mean(prediction, axis=1)
         except: # real sketchy, but we don't want tensorflow to error silently in the background
             self.printLine("Tensorflow had error during preduction")
             return
