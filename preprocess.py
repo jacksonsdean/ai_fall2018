@@ -2,6 +2,7 @@ import math
 import numpy as np
 import pandas as pd
 import librosa as lb
+import librosa.display
 import matplotlib.pyplot as plt
 
 # CODE FROM https://github.com/meetshah1995/crnn-music-genre-classification/blob/master/src/read_data.py:
@@ -92,8 +93,11 @@ def ourMel(path, plot=False):
     spectrogram = lb.power_to_db(spectrogram, ref=np.max)
 
     if plot:
-        spectrogram = spectrogram[np.newaxis, :]
-        plt.imshow(spectrogram.reshape((spectrogram.shape[1], spectrogram.shape[2])))
+        plt.figure(figsize=(10, 4))
+        librosa.display.specshow(spectrogram, y_axis='mel', fmax=8000,x_axis='time')
+        plt.colorbar(format='%+2.0f dB')
+        plt.title('Mel spectrogram')
+        plt.tight_layout()
         plt.show()
 
     return spectrogram
@@ -110,6 +114,6 @@ if __name__ == '__main__':
     np.save("labels.npy", get_labels()[:N_SONGS])
     print("labels array saved to labels.npy")
     np.save("data.npy", out[1])
-    print("data array saved to data2.npy")
+    print("data array saved to data.npy")
 
 

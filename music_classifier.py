@@ -55,43 +55,45 @@ class Application(tk.Frame):
     def create_widgets(self):
         self.winfo_toplevel().title("Music Classifier COMP 484")
 
-
-
-        self.optFrame = tk.LabelFrame(self, text="", padx=5, pady=5)
-        self.optFrame.grid(row=1, column=0, rowspan=1, pady=(10, 0), padx=5)
+        winFrame = tk.LabelFrame(self, text = "", padx = 10, pady = 5,height=4, width = 40)
+        winFrame.grid(row = 0, pady=10, padx=10)
+        self.optFrame = tk.LabelFrame(winFrame, text="", padx=5, pady=5)
+        self.optFrame.grid(row=1, column=0, rowspan=1, pady=5, padx=5)
         self.optFrame.config(bd=1, height=40)
 
-
-        optBtn = tk.Button(self.optFrame)
+        # gear = tk.PhotoImage(file="photos/gear.png")
+        # gear.subsample(5, 5)
+        optBtn = tk.Button(winFrame)
         optBtn["text"] = "Configure"
         optBtn["command"] = self.optionsWindow
-        optBtn.config(width=8)
-        optBtn.grid(row=2, column=1, sticky="w")
+        # optBtn.config(width=10, height=10, image=gear)
+        optBtn.config(width=10)
+        optBtn.grid(row=1, sticky="w", padx=5, pady=5)
 
 
         self.model_type.set(1)
 
-        self.btnFrame = tk.LabelFrame(self, text="", padx=5, pady=5)
+        self.btnFrame = tk.LabelFrame(winFrame, text="", padx=5, pady=5)
 
-        self.btnFrame.grid(row=1, column=1, columnspan=1, pady=(10,0), padx=5)
+        self.btnFrame.grid(row=1, column=1, pady=5, padx=5)
         self.btnFrame.config(bd=1, height=40)
 
-        self.train_btn = tk.Button(self.btnFrame)
+        self.train_btn = tk.Button(winFrame)
         self.train_btn["text"] = " Train "
         self.train_btn["command"] = self.train
-        self.train_btn.config(width = 8)
-        self.train_btn.grid(row=1,column= 0, pady=0, padx=(5,0),sticky="w")
+        self.train_btn.config(width = 10)
+        self.train_btn.grid(row=1,column= 1, pady=5, padx=5,sticky="w")
 
 
-        self.predict_btn = tk.Button(self.btnFrame)
+        self.predict_btn = tk.Button(winFrame)
         self.predict_btn["text"] = "Predict"
         self.predict_btn["command"] = self.predict
-        self.predict_btn.config(width = 8)
-        self.predict_btn.grid(row=1, column=1,columnspan=2,  pady=0, padx=5)
+        self.predict_btn.config(width = 10)
+        self.predict_btn.grid(row=1, column=2,  pady=5, padx=5)
 
-        self.out = tk.Text(self, state='disabled',height=4, width = 50, background="#272323", fg="#ffffff")
+        self.out = tk.Text(self, state='disabled',height=4, width = 30, background="#272323", fg="#ffffff")
         self.out.tag_config("right", justify=tk.RIGHT)
-        self.out.grid(row = 4, columnspan=3, pady=(20,0), padx=20)
+        self.out.grid(row = 4, columnspan=1, pady=(10,0), padx=20)
         self.printLine("Started")
 
         self.q_btn = tk.Button(self)
@@ -109,16 +111,14 @@ class Application(tk.Frame):
         window = tk.Toplevel(self)
         window.grab_set()
 
-        self.typeFrame = tk.LabelFrame(window, text="Model Type", padx=5, pady=5)
+        self.typeFrame = tk.LabelFrame(window, text="Model Type", padx=5, pady=5, width=30)
         self.typeFrame.grid(row=0, column=0, rowspan=2, pady=10, padx=10)
         self.typeFrame.config(bd=1, height=40)
         rb1 = tk.Radiobutton(self.typeFrame, text="CNN", variable=self.model_type, value=1,
                              command=lambda: self.changeType(1))
-        # rb1.config(bg="#272323", fg="#ffffff")
         rb1.pack(anchor="n")
         rb2 = tk.Radiobutton(self.typeFrame, text="LSTM", variable=self.model_type, value=2,
                              command=lambda: self.changeType(2))
-        # rb2.config(bg="#272323", fg="#ffffff")
         rb2.pack(anchor="n")
 
 
@@ -421,7 +421,7 @@ class Application(tk.Frame):
         prediction = []
         # Do prediction
         try:
-            for i in range(1000):
+            for i in range(1):
                 p = self.model.predict(predict_data)
                 prediction.append(p)
             prediction = np.array(prediction)
