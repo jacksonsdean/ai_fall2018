@@ -1,5 +1,7 @@
 import numpy as np
+np.random.seed(1337)
 import tensorflow as tf
+tf.set_random_seed(1338)
 import librosa as lb
 import matplotlib.pyplot as plt
 import tkinter as tk
@@ -17,7 +19,7 @@ from subprocess import Popen
 
 N_SAMPLES = 1000
 TRAIN_SPLIT = 0.8
-CNN_LEARN_RATE = 0.0005 # default: 0.003
+CNN_LEARN_RATE = 0.0015 # default: 0.0005
 N_CATEGORIES = 10
 
 train_size = int(N_SAMPLES * TRAIN_SPLIT)
@@ -241,7 +243,8 @@ class Application(tk.Frame):
                       epochs=self.n_epoch,
                       verbose=1,
                       validation_data=(x_test, y_test),
-                      callbacks=[history])
+                      callbacks=[history],
+                      shuffle=False)
         except: # real sketchy, but we don't want tensorflow to error silently in the background
             self.printLine("Tensorflow had error during train")
             return
@@ -335,7 +338,7 @@ class Application(tk.Frame):
             os.system("start " + path)
 
 
-        if(self.stats):
+        if(self.stats.get()):
             x_train, x_test, y_train, y_test = self.getData()
             if self.model_type.get() == 1:
                 x_train = x_train.reshape([-1, 96, 1366, 1])
@@ -375,7 +378,7 @@ class Application(tk.Frame):
 
         # Do prediction
         try:
-            prediction = self.model.predict(predict_data)
+            prediction = self.model.predict(predict_data)   
         except: # real sketchy, but we don't want tensorflow to error silently in the background
             self.printLine("Tensorflow had error during preduction")
             return
