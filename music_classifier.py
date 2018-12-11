@@ -8,9 +8,9 @@ import tkinter as tk
 import pandas as pd
 import os
 from time import time
-
+import random
+random.seed(1339)
 from sys import platform
-# from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 from tkinter import messagebox
 from subprocess import Popen
@@ -70,9 +70,6 @@ class Application(tk.Frame):
         optBtn.config(width=10)
         optBtn.grid(row=1, sticky="w", padx=5, pady=5)
 
-
-        self.model_type.set(1)
-
         self.btnFrame = tk.LabelFrame(winFrame, text="", padx=5, pady=5)
 
         self.btnFrame.grid(row=1, column=1, pady=5, padx=5)
@@ -103,10 +100,6 @@ class Application(tk.Frame):
         self.q_btn.grid(row = 5, column=0, columnspan=3, pady=(5,10))
 
     def optionsWindow(self):
-
-
-
-
 
         window = tk.Toplevel(self)
         window.grab_set()
@@ -365,7 +358,7 @@ class Application(tk.Frame):
         self.printLine("Model built, choose file...")
 
 
-        Tk().withdraw()
+        tk.Tk().withdraw()
         path = askopenfilename(initialdir="./data")
         if path == "":
             self.printLine("please choose a file")
