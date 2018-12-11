@@ -414,7 +414,7 @@ class Application(tk.Frame):
         prediction = []
         # Do prediction
         try:
-            for i in range(1):
+            for i in range(100):
                 p = self.model.predict(predict_data)
                 prediction.append(p)
             prediction = np.array(prediction)
