@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import numpy as np
 np.random.seed(1337)
 import tensorflow as tf
@@ -14,6 +15,7 @@ from sys import platform
 from tkinter.filedialog import askopenfilename
 from tkinter import messagebox
 from subprocess import Popen
+from preprocess import ourMel
 
 
 
@@ -354,6 +356,9 @@ class Application(tk.Frame):
             elif (self.model_type.get() == 2):
                 self.buildLSTMModel()
                 self.model.load_weights("./LSTMweights")
+            else:
+                messagebox.showerror("No model", "Please choose a model type in the configuration settings")
+                return
 
         self.printLine("Model built, choose file...")
 
@@ -361,7 +366,7 @@ class Application(tk.Frame):
         tk.Tk().withdraw()
         path = askopenfilename(initialdir="./data")
         if path == "":
-            self.printLine("please choose a file")
+            messagebox.showwarning("No file chosen", "Please choose a file")
             return
         self.printLine("Predicting...")
 
@@ -389,21 +394,9 @@ class Application(tk.Frame):
 
 
         # Build the spectrogram for this song:
-        y, sr = lb.load(path, mono=True)
-        spectrogram = lb.feature.melspectrogram(y=y, sr=sr, n_mels=96, n_fft=2048, hop_length=256)
-        spectrogram = lb.power_to_db(spectrogram, ref=np.max)
-
-        if(self.mel_plot.get()):
-            spectrogram = spectrogram[np.newaxis, :]
-            plt.imshow(spectrogram.reshape((spectrogram.shape[1], spectrogram.shape[2])))
-            plt.ion()
-            plt.show()
-            plt.draw()
-            plt.pause(0.001)
-
+        spectrogram = ourMel(path, self.mel_plot.get())
         predict_data = np.empty([1, 1366, 96])
         np.append(predict_data, spectrogram)
-        # predict_data = predict_data.reshape(1, 96, 1366)
 
         predict_data = predict_data.reshape([1] + self.input_shape)
 
@@ -419,8 +412,9 @@ class Application(tk.Frame):
                 prediction.append(p)
             prediction = np.array(prediction)
             prediction = np.mean(prediction, axis=1)
-        except: # real sketchy, but we don't want tensorflow to error silently in the background
-            self.printLine("Tensorflow had error during preduction")
+        except Exception as e: # real sketchy, but we don't want tensorflow to error silently in the background
+            self.printLine("Tensorflow had error during prediction")
+            messagebox.showerror("Error", e)
             return
 
         pred_class = prediction.argmax()
