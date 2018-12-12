@@ -3,7 +3,6 @@ import numpy as np
 np.random.seed(1337)
 import tensorflow as tf
 tf.set_random_seed(1338)
-import librosa as lb
 import matplotlib.pyplot as plt
 import tkinter as tk
 import pandas as pd
@@ -17,12 +16,12 @@ from tkinter import messagebox
 from subprocess import Popen
 from preprocess import ourMel
 
+from models import buildCNNModel, buildLSTMModel
+
 
 
 N_SAMPLES = 1000
 TRAIN_SPLIT = 0.8
-CNN_LEARN_RATE = 0.0015 # default: 0.0005
-N_CATEGORIES = 10
 
 train_size = int(N_SAMPLES * TRAIN_SPLIT)
 test_size = N_SAMPLES - train_size
@@ -53,6 +52,9 @@ class Application(tk.Frame):
         self.play_song = tk.IntVar()
         self.play_song.set(0)
         self.create_widgets()
+
+        self.cnn_lr = tk.DoubleVar()
+        self.cnn_lr.set(0.0015)
 
     def create_widgets(self):
         self.winfo_toplevel().title("Music Classifier COMP 484")
@@ -136,10 +138,30 @@ class Application(tk.Frame):
         pp.config(bd=2)
         pp.grid(row=5, column=0, sticky="w")
 
-        close = tk.Button(window)
-        close["text"] = "Close"
-        close["command"] = window.destroy
-        close.grid(row=6)
+        cnnlr_frame = tk.LabelFrame(optionsFrame, bd=0)
+        cnnlr_frame.grid(row=6, sticky="w")
+        cnnlr_label = tk.Label(cnnlr_frame, text="CNN LR:")
+        self.cnnlr_entry = tk.Entry(cnnlr_frame, width=6)
+
+        self.cnnlr_entry.delete(0, tk.END)
+        self.cnnlr_entry.insert(0, str(self.cnn_lr.get()))
+
+        cnnlr_label.grid(row=0, column=0, sticky="w")
+        self.cnnlr_entry.grid(row=0, column=1, sticky="w")
+
+
+        def close(app, w):
+            try:
+                app.cnn_lr = float(app.cnnlr_entry.get())
+            except ValueError:
+                messagebox.showerror("Bad LR Value", "Enter a float for CNN LR")
+                return
+            w.destroy()
+
+        apply = tk.Button(window)
+        apply["text"] = "Apply"
+        apply["command"] = lambda: close(self,window)
+        apply.grid(row=6)
 
     def printLine(self, text):
         self.out.configure(state='normal')
@@ -157,77 +179,47 @@ class Application(tk.Frame):
         self.model_built = False
         self.model_type.set(type)
 
-    def buildLSTMModel(self):
-        print("Building LSTM...")
-        self.printLine('Building LSTM....')
-
-        self.model = tf.keras.models.Sequential()
-        self.model.add(tf.keras.layers.LSTM(units=128, dropout=0.05, recurrent_dropout=0.35, return_sequences=True,
-                                       input_shape=self.input_shape))
-        self.model.add(tf.keras.layers.LSTM(units=32, dropout=0.05, recurrent_dropout=0.35, return_sequences=False))
-        self.model.add(tf.keras.layers.Dense(units=N_CATEGORIES, activation='softmax'))
-
-        adam = tf.keras.optimizers.Adam()
-        self.model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
-        self.model_built = True
-
-
-    def buildCNNModel(self):
-        print("Building CNN...")
-        self.printLine('Building CNN....')
-
-
-        cnn_input_shape = self.input_shape + [1]
-
-        self.model = tf.keras.models.Sequential([
-            tf.keras.layers.Conv2D(32, kernel_size=(4, 4),
-                                   strides=(4, 4),  # X and Y to move the window by
-                                   activation=tf.nn.relu,
-                                   input_shape=cnn_input_shape,
-                                   padding='SAME'),
-            # tf.keras.layers.Dense(512, activation=tf.nn.relu),
-            tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='VALID'),
-            tf.keras.layers.Dropout(.3),
-
-            tf.keras.layers.Conv2D(64, (4, 4), activation=tf.nn.relu, padding='SAME'),
-            tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
-            tf.keras.layers.Dropout(.3),
-
-            tf.keras.layers.Conv2D(64, (4, 4), activation=tf.nn.relu, padding='SAME'),
-            tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
-            tf.keras.layers.Dropout(.3),
-
-            tf.keras.layers.Conv2D(128, (4, 4), activation=tf.nn.relu, padding='SAME'),
-            tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='VALID'),
-            tf.keras.layers.Dropout(.3),
-
-            tf.keras.layers.Flatten(),
-
-            tf.keras.layers.Dense(1000, activation=tf.nn.sigmoid),
-            tf.keras.layers.Dense(N_CATEGORIES, activation='softmax')
-        ])
-        adam = tf.keras.optimizers.Adam(lr=CNN_LEARN_RATE)
-        self.model.compile(optimizer=adam,
-                      loss=tf.keras.losses.categorical_crossentropy,
-                      metrics=['accuracy'])
-        self.model_built = True
 
     def train(self):
-        self.valid = False
         self.is_train = True
+
+
+
+        x_train, x_test, y_train, y_test = self.getData()
+        if not self.model_built or self.model == None:
+            if (self.model_type.get() == 1):
+                self.printLine('Building CNN....')
+
+                self.model = buildCNNModel(self.input_shape, self.cnn_lr)
+                x_train = x_train.reshape([-1, 96, 1366, 1])
+                x_test = x_test.reshape([-1, 96, 1366, 1])
+
+            elif (self.model_type.get() == 2):
+                self.printLine('Building LSTM....')
+
+                self.model = buildLSTMModel(self.input_shape)
+            else:
+                messagebox.showerror("No model", "Please choose a model type in the configuration settings")
+                return
+
+            self.model_built = True
+
+        history = AccuracyHistory(plotting=self.train_plot)
+
+        self.valid = False
+
         window = tk.Toplevel(self)
         window.grab_set()
-        tk.Label(window, text="Batch Size: ", anchor="e").grid(row=0, column=0)
-        tk.Label(window, text="Epochs: ", anchor="e").grid(row=1, column=0)
+        tk.Label(window, text="Batch Size (400): ", anchor="e").grid(row=0, column=0)
+        tk.Label(window, text="Epochs (200): ", anchor="e").grid(row=1, column=0)
 
-
-        batch_entry = tk.Entry(window)
+        batch_entry = tk.Entry(window, takefocus=True)
         batch_entry.grid(row=0, column=1)
 
         epoch_entry = tk.Entry(window)
         epoch_entry.grid(row=1, column=1)
 
-        epoch_entry.bind('<Return>', lambda event, obj=self:go(obj))
+        epoch_entry.bind('<Return>', lambda event, obj=self: go(obj))
 
         def go(obj):
             obj.valid = False
@@ -235,13 +227,16 @@ class Application(tk.Frame):
             try:
                 obj.n_epoch = int(epoch_entry.get())
                 obj.batch_size = int(batch_entry.get())
-                if obj.n_epoch == 0 or obj.batch_size == 0:
-                    raise ValueError
+                if str(epoch_entry.get()) == "":
+                    obj.n_epoch = 200
+                if str(batch_entry.get()) == "":
+                    obj.batch_size = 400
                 else:
                     obj.valid = True
                     obj.printLine("Preparing...")
                     window.destroy()
             except ValueError:
+                messagebox.showwarning("Bad entry", "Please enter integers. You entered: " + str(batch_entry.get()) + ", " + str(epoch_entry.get()))
                 return
 
         go_btn = tk.Button(window, command=lambda: go(self))
@@ -257,22 +252,30 @@ class Application(tk.Frame):
             self.printLine("Starting Train...")
 
 
-        x_train, x_test, y_train, y_test = self.getData()
-        if not self.model_built or self.model == None:
-            if (self.model_type.get() == 1):
-                self.buildCNNModel()
-                x_train = x_train.reshape([-1, 96, 1366, 1])
-                x_test = x_test.reshape([-1, 96, 1366, 1])
-
-            elif (self.model_type.get() == 2):
-                self.buildLSTMModel()
-
-        history = AccuracyHistory(plotting=self.train_plot)
-
 
         self.printLine("Training...")
 
+
         try:
+
+            def close_win():
+                messagebox.showwarning("Hold on!", "Train hasn't finished yet")
+
+            win = tk.Toplevel(self)
+            win.focus_force()
+            win.grab_set()
+            win.protocol('WM_DELETE_WINDOW', close_win)
+
+            text = tk.Label(win, text="Training, please wait...")
+            text.pack(padx=10, pady=10)
+
+            def stop(self, win):
+                self.model.stop_training = True
+                win.destroy()
+
+            btn = tk.Button(win, text="Stop", command=lambda:stop(self, win))
+            btn.pack(padx=5, pady=5)
+
             self.model.fit(x_train, y_train,
                       batch_size=self.batch_size,
                       epochs=self.n_epoch,
@@ -285,6 +288,7 @@ class Application(tk.Frame):
             messagebox.showerror("error", e)
             return
 
+        win.destroy()
         score = self.model.evaluate(x_test, y_test)
         print('Test loss:', score[0])
         print('Test accuracy:', score[1])
@@ -350,15 +354,16 @@ class Application(tk.Frame):
 
         if (not self.model_built) or self.model == None:
             if (self.model_type.get() == 1):
-                self.buildCNNModel()
+                self.model = buildCNNModel(self.input_shape, self.cnnlr)
 
                 self.model.load_weights("./CNNweights")
             elif (self.model_type.get() == 2):
-                self.buildLSTMModel()
+                self.model = buildLSTMModel(self.input_shape)
                 self.model.load_weights("./LSTMweights")
             else:
                 messagebox.showerror("No model", "Please choose a model type in the configuration settings")
                 return
+            self.model_built = True
 
         self.printLine("Model built, choose file...")
 
